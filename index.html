@@ -1,0 +1,168 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Laser Log v0.5</title><style>:root{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;color:#17212e;background:#f3f5f8}*{box-sizing:border-box}body{margin:0;padding:18px}main{max-width:600px;margin:auto}.panel,.record{background:white;border:1px solid #dfe3e9;border-radius:16px;padding:18px;margin-bottom:16px}h1{font-size:23px;margin:0}h2{font-size:17px}small{color:#687385}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}label{display:block;font-size:13px;font-weight:650;margin:12px 0 5px}input:not([type=file]),select{width:100%;padding:12px;border:1px solid #cdd4de;border-radius:9px;font-size:16px;background:white}.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}.thumb{position:relative;aspect-ratio:1}.thumb img{width:100%;height:100%;object-fit:cover;border-radius:10px;cursor:pointer}.remove{position:absolute;right:3px;top:3px;border:0;border-radius:50%;background:#111b;color:white;width:25px;height:25px}.add{aspect-ratio:1;border:2px dashed #abb7c5;background:#f7f9fc;border-radius:10px;font-size:30px;color:#516174;cursor:pointer}.primary{width:100%;background:#233e68;color:white;padding:14px;border:0;border-radius:10px;font-size:16px;margin-top:18px}.secondary{border:1px solid #ccd3de;border-radius:8px;padding:8px;background:white}.record{margin-top:12px}.meta{font-size:14px;line-height:1.9}.head{display:flex;justify-content:space-between;align-items:center}.hint{font-size:12px;color:#677486}dialog{border:0;border-radius:12px;padding:8px;max-width:95vw;background:#111}dialog img{max-width:90vw;max-height:85vh;object-fit:contain}dialog button{color:white;background:transparent;border:0;float:right;font-size:22px}
+/* iPhone compact layout */
+body{padding:8px}.panel{padding:12px;margin-bottom:8px;border-radius:12px}h1{font-size:19px}h2{font-size:15px;margin:3px 0}.hint{margin:4px 0;font-size:10px}.grid{gap:6px 10px}label{font-size:12px;margin:7px 0 3px}input:not([type=file]),select{padding:7px 9px;font-size:16px;height:36px}.photos{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}.thumb,.add{width:53px;height:53px;flex:none;aspect-ratio:auto}.add{font-size:24px}.primary{padding:10px;margin-top:10px}.record{padding:9px;margin:7px 0}.meta{font-size:12px;line-height:1.5}.secondary{padding:5px 8px;font-size:12px}
+#snapshot{display:none}body.snapshot-mode{padding:8px;background:white}body.snapshot-mode main>section{display:none}body.snapshot-mode #snapshot{display:block;max-width:600px;margin:0 auto;padding:10px;border:1px solid #dfe3e9;border-radius:12px}#snapshot .snap-header{display:flex;align-items:center;justify-content:space-between;gap:8px}#snapshot h2{font-size:18px;margin:0}#snapshot .snap-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:10px 0}#snapshot .snap-cell{border:1px solid #e1e5eb;border-radius:8px;padding:7px}#snapshot .snap-cell small{display:block;font-size:11px}#snapshot .snap-cell strong{font-size:17px}#snapshot .snap-photos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}#snapshot .snap-photos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:7px}#snapshot .snap-controls{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}#snapshot .snap-controls button{padding:7px 10px;border:1px solid #cdd4de;background:white;border-radius:7px}#snapshot .snap-controls span{font-size:11px;color:#687385}#snapshot .snap-date{font-size:11px;color:#687385;margin:5px 0}body.snapshot-mode #snapshot .snap-controls{margin-bottom:8px}@media(max-height:740px){.panel{padding:9px}label{margin-top:5px}.thumb,.add{width:44px;height:44px}.primary{margin-top:6px}}
+/* v0.4: 横一列の画像サムネイル。枚数が増えても縦方向に伸ばさない */
+.photos{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:5px;max-width:100%;padding-bottom:3px;scrollbar-width:thin}
+.thumb,.add{width:clamp(36px,12vw,53px);height:clamp(36px,12vw,53px);flex:0 0 auto}
+#snapshot .snap-photos{display:flex;flex-wrap:nowrap;gap:4px;overflow:hidden}
+#snapshot .snap-photos img{width:auto;min-width:0;flex:1 1 0;aspect-ratio:1;object-fit:cover}
+
+.tabs{display:flex;gap:6px;margin-bottom:8px}.tabs button{flex:1;padding:10px;border:1px solid #ccd3de;background:white;border-radius:9px;font-weight:700;color:#334155}.tabs button.active{background:#233e68;color:white}.toolbar{display:flex;gap:6px;margin:8px 0}.toolbar button{flex:1}.hidden{display:none!important}.record .photos{margin-top:6px}#search{margin-bottom:8px}.notice{font-size:11px;color:#687385;margin:8px 0}.editbar{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#233e68}
+
+/* Entry previews only: the add button uses its own row. */
+#entry-panel #selected{display:grid;grid-template-columns:repeat(var(--photo-columns,1),minmax(0,1fr));overflow:visible}
+#entry-panel #selected .thumb{width:100%;height:auto;aspect-ratio:1;min-width:0;background:#f7f9fc;border-radius:10px}
+#entry-panel #selected.single-photo .thumb{aspect-ratio:2}
+#entry-panel #selected .thumb img{display:block;object-fit:contain}
+#entry-panel #selected .add{grid-column:1 / -1}
+#save-confirm{width:320px;max-width:calc(100vw - 32px);padding:18px;background:white;color:#17212e}
+#save-confirm p{margin:0 0 18px;font-size:16px}
+#save-confirm .confirm-actions{display:flex;gap:10px}
+#save-confirm button{float:none;flex:1;min-height:44px;margin:0;padding:10px;border:1px solid #ccd3de;border-radius:8px;background:white;color:#17212e;font-size:16px}
+#save-confirm #confirm-save{background:#233e68;color:white;border-color:#233e68}
+#save-confirm::backdrop{background:rgba(0,0,0,.35)}
+#entry-panel .entry-actions{display:flex;align-items:stretch;gap:6px}
+#entry-panel .entry-actions #save{flex:1;min-width:0}
+#entry-panel #reset-entry{margin-top:10px;padding:8px 12px}
+#save-status{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 18px;border-radius:9px;background:#233e68;color:white;font-size:14px;z-index:10;pointer-events:none}
+</style></head><body><main><nav class="tabs"><button id="tab-entry" class="active" type="button">記録する</button><button id="tab-history" type="button">履歴を見る</button></nav><section class="panel" id="entry-panel"><div id="editbar" class="editbar hidden"><strong>履歴を編集中</strong><button class="secondary" id="cancel-edit" type="button">編集をやめる</button></div><form id="form"><label for="material">素材名</label><input id="material" required placeholder="例：MDF 3mm"><div class="grid"><div><label for="power">電源 (0〜100)</label><input id="power" type="number" min="0" max="100" step="any" value="50" required></div><div><label for="speed">速度 (0〜600)</label><input id="speed" type="number" min="0" max="600" step="any" value="300" required></div><div><label for="passes">加工回数</label><select id="passes"><option>1</option><option>2</option><option>3</option></select></div><div><label for="density">彫刻密度 (10〜300)</label><input id="density" type="number" min="10" max="300" step="any" value="100" required></div></div><label for="mode">彫刻モード</label><select id="mode"><option>双方向</option><option>単方向</option></select><label>完成画像（追加は3枚まで）</label><div class="photos" id="selected"><button type="button" class="add" id="add" aria-label="画像を追加">＋</button></div><input type="file" id="file" accept="image/*" multiple hidden><div class="entry-actions"><button class="primary" id="save" type="button">設定を記録する</button><button class="secondary" id="reset-entry" type="button">リセット</button></div></form></section><section class="panel hidden" id="history-panel"><div class="head"><h2>保存した加工設定</h2><small id="count">0件</small></div><input id="search" type="search" placeholder="素材名で検索"><div class="toolbar"><button class="secondary" id="export" type="button">バックアップ保存</button><button class="secondary" id="import" type="button">バックアップ復元</button><input type="file" id="backup-file" accept="application/json,.json" hidden></div><p class="notice">データはこの端末内に保存されます。大切な履歴は定期的にバックアップしてください。</p><div id="records"><p class="hint">まだ記録がありません</p></div></section><section id="snapshot"><div class="snap-controls"><button type="button" id="back">← 一覧に戻る</button><span>この画面をスクショで保存</span></div><div id="snap-body"></div></section></main><dialog id="viewer"><button id="close" aria-label="閉じる">×</button><img id="large" alt="完成写真"></dialog><dialog id="save-confirm" aria-labelledby="save-confirm-message"><p id="save-confirm-message">この設定を記録しますか？</p><div class="confirm-actions"><button id="cancel-save" type="button" autofocus>キャンセル</button><button id="confirm-save" type="button">記録する</button></div></dialog><div id="save-status" class="hidden" role="status" aria-live="polite"></div><script>
+const $=id=>document.getElementById(id);
+let db,selected=[],editingId=null,allRecords=[],dbState='opening',saving=false,resetting=false,saveStatusTimer;
+function reportError(message,error){console.error(message,error);alert(message)}
+function confirmEntryAction(message,label){return new Promise((resolve,reject)=>{
+  const dialog=$('save-confirm');let accepted=false;
+  $('save-confirm-message').textContent=message;
+  $('confirm-save').textContent=label;
+  $('confirm-save').onclick=()=>{if(dialog.open){accepted=true;dialog.close()}};
+  $('cancel-save').onclick=()=>{if(dialog.open)dialog.close()};
+  dialog.oncancel=e=>{e.preventDefault();dialog.close()};
+  dialog.onclose=()=>{dialog.onclose=null;resolve(accepted)};
+  try{dialog.showModal()}catch(error){dialog.onclose=null;reject(error)}
+})}
+function confirmRecordSave(isEditing){return confirmEntryAction(isEditing?'この変更を保存しますか？':'この設定を記録しますか？','記録する')}
+function hideSaveStatus(){clearTimeout(saveStatusTimer);$('save-status').classList.add('hidden');$('save-status').textContent=''}
+function showSaveStatus(){
+  hideSaveStatus();$('save-status').textContent='記録しました';$('save-status').classList.remove('hidden');
+  saveStatusTimer=setTimeout(hideSaveStatus,2000);
+}
+$('reset-entry').onclick=async()=>{
+  if(saving||resetting)return;
+  resetting=true;$('save').disabled=true;$('reset-entry').disabled=true;
+  try{
+    if(!await confirmEntryAction('入力内容をリセットしますか？','リセットする'))return;
+    $('form').reset();selected=[];editingId=null;$('file').value='';
+    $('editbar').classList.add('hidden');$('save').textContent='設定を記録する';
+    drawSelected();hideSaveStatus();switchTab('entry');
+  }catch(error){reportError('入力内容をリセットできませんでした。もう一度お試しください。',error)}
+  finally{resetting=false;$('save').disabled=false;$('reset-entry').disabled=false}
+};
+function requireDB(){if(!db)throw new Error(dbState==='opening'?'保存領域の準備中です。少し待ってから再度お試しください。':'保存領域を利用できません。ページを再読み込みしてください。');return db}
+function createRecordId(){
+  const cryptoAPI=globalThis.crypto;
+  if(typeof cryptoAPI?.randomUUID==='function')return cryptoAPI.randomUUID();
+  if(typeof cryptoAPI?.getRandomValues!=='function')throw new Error('安全なIDを生成できません。このブラウザでは保存できません。');
+  const bytes=cryptoAPI.getRandomValues(new Uint8Array(16));
+  bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
+  const hex=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+  return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+}
+// Resolve only after the transaction commits, never just after a request succeeds.
+function writeRecords(write){return new Promise((resolve,reject)=>{
+  let tx;
+  try{
+    tx=requireDB().transaction('records','readwrite');
+    let requestError;
+    tx.onerror=e=>{requestError=e.target.error};
+    tx.onabort=()=>reject(tx.error||requestError||new Error('保存処理が中断されました。'));
+    tx.oncomplete=()=>resolve();
+    write(tx.objectStore('records'));
+  }catch(error){if(tx){try{tx.abort()}catch{}}reject(error)}
+})}
+try{
+  const open=indexedDB.open('laser-log-v02',1);
+  open.onupgradeneeded=()=>{if(!open.result.objectStoreNames.contains('records'))open.result.createObjectStore('records',{keyPath:'id'})};
+  open.onsuccess=()=>{
+    db=open.result;dbState='ready';
+    db.onversionchange=()=>{db.close();db=null;dbState='closed';alert('保存領域が更新されました。ページを再読み込みしてください。')};
+    db.onclose=()=>{db=null;dbState='closed';alert('保存領域との接続が切れました。ページを再読み込みしてください。')};
+    render();
+  };
+  open.onerror=()=>{dbState='failed';reportError('保存領域を開けませんでした。Safariの保存設定を確認し、ページを再読み込みしてください。',open.error)};
+  open.onblocked=()=>alert('保存領域の準備が他のタブによって待機中です。他のLaser Logのタブを閉じてください。');
+}catch(error){dbState='failed';reportError('保存領域を初期化できませんでした。Safariの保存設定を確認し、ページを再読み込みしてください。',error)}
+const MAX_PHOTOS=3;let addingPhotos=false;
+$('add').onclick=()=>{if(!addingPhotos&&selected.length<MAX_PHOTOS)$('file').click()};
+$('file').onchange=async e=>{
+  if(addingPhotos)return;
+  const files=Array.from(e.target.files),target=selected;
+  addingPhotos=true;$('add').disabled=true;
+  try{
+    let overLimit=false;
+    for(const file of files){
+      if(!file.type.startsWith('image/'))continue;
+      if(selected!==target)break;
+      if(selected.length>=MAX_PHOTOS){overLimit=true;break}
+      try{
+        const photo=await shrink(file);
+        if(selected!==target)break;
+        if(selected.length>=MAX_PHOTOS){overLimit=true;break}
+        selected.push(photo);drawSelected();
+      }catch{alert('画像を読み込めませんでした')}
+    }
+    if(overLimit)alert('写真の追加は3枚までです。追加するには写真を削除してください。');
+  }finally{addingPhotos=false;$('add').disabled=false;$('file').value='';drawSelected()}
+};
+function shrink(file){return new Promise((resolve,reject)=>{const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{const scale=Math.min(1,1200/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*scale));c.height=Math.max(1,Math.round(img.height*scale));c.getContext('2d').drawImage(img,0,0,c.width,c.height);c.toBlob(blob=>{URL.revokeObjectURL(url);blob?resolve(blob):reject()},'image/jpeg',.8)};img.onerror=()=>{URL.revokeObjectURL(url);reject()};img.src=url})}function makePhoto(blob,remove){const box=document.createElement('div');box.className='thumb';const img=document.createElement('img'),url=URL.createObjectURL(blob);img.src=url;img.onload=()=>URL.revokeObjectURL(url);img.onclick=()=>{const big=URL.createObjectURL(blob);$('large').src=big;$('large').onload=()=>URL.revokeObjectURL(big);$('viewer').showModal()};box.append(img);if(remove){const b=document.createElement('button');b.type='button';b.className='remove';b.textContent='×';b.onclick=remove;box.append(b)}return box}function drawSelected(){
+  $('selected').classList.toggle('single-photo',selected.length===1);
+  $('selected').style.setProperty('--photo-columns',Math.max(1,Math.min(selected.length,MAX_PHOTOS)));
+  $('add').classList.toggle('hidden',selected.length>=MAX_PHOTOS);
+  $('selected').replaceChildren(...selected.map((blob,i)=>makePhoto(blob,()=>{selected.splice(i,1);drawSelected()})),$('add'));
+}$('back').onclick=()=>{document.body.classList.remove('snapshot-mode');switchTab('history')};function switchTab(tab){$('entry-panel').classList.toggle('hidden',tab!=='entry');$('history-panel').classList.toggle('hidden',tab!=='history');$('tab-entry').classList.toggle('active',tab==='entry');$('tab-history').classList.toggle('active',tab==='history')} $('tab-entry').onclick=()=>switchTab('entry');$('tab-history').onclick=()=>switchTab('history');$('search').oninput=()=>drawRecords(allRecords);$('cancel-edit').onclick=()=>{editingId=null;$('editbar').classList.add('hidden');$('save').textContent='設定を記録する';$('form').reset();selected=[];drawSelected()};$('close').onclick=()=>$('viewer').close();$('viewer').onclick=e=>{if(e.target===$('viewer'))$('viewer').close()};// Saving is available only through the save button, never implicit form submission.
+$('form').onsubmit=e=>e.preventDefault();
+$('form').onkeydown=e=>{
+  if(e.key!=='Enter'||e.isComposing||e.keyCode===229)return;
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT'){
+    e.preventDefault();e.target.blur();
+  }
+};
+$('save').onclick=async e=>{
+  e.preventDefault();if(saving||resetting||!$('form').reportValidity())return;
+  saving=true;$('save').disabled=true;$('reset-entry').disabled=true;hideSaveStatus();
+  try{
+    const isEditing=editingId!==null;
+    if(!await confirmRecordSave(isEditing))return;
+    requireDB();
+    const r={id:editingId||createRecordId(),createdAt:Date.now(),date:new Date().toLocaleString('ja-JP'),material:$('material').value.trim(),power:$('power').value,speed:$('speed').value,passes:$('passes').value,density:$('density').value,mode:$('mode').value,photos:[...selected]};
+    if(!r.material)return;
+    await writeRecords(store=>isEditing?store.put(r):store.add(r));
+    if(await render('記録の保存は完了しましたが、履歴を読み込めませんでした。入力内容と写真は保持されています。ページを再読み込みする前に必要に応じて控えてください。')){
+      showSaveStatus();
+    }
+  }catch(error){reportError('保存できませんでした。入力内容と写真は残っています。'+(error.name==='QuotaExceededError'?'端末の空き容量を確認してください。':error.message||'もう一度お試しください。'),error)}
+  finally{saving=false;$('save').disabled=false;$('reset-entry').disabled=false}
+};
+async function render(message='履歴を読み込めませんでした。ページを再読み込みしてください。'){
+  try{
+    const items=await new Promise((resolve,reject)=>{
+      const tx=requireDB().transaction('records','readonly');
+      const request=tx.objectStore('records').getAll();
+      let rows,requestError;
+      request.onsuccess=()=>{rows=request.result};
+      tx.onerror=e=>{requestError=e.target.error};
+      tx.onabort=()=>reject(tx.error||requestError||new Error('読み込みが中断されました。'));
+      tx.oncomplete=()=>resolve(rows);
+    });
+    allRecords=items.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    $('count').textContent=allRecords.length+'件';drawRecords(allRecords);
+    return true;
+  }catch(error){reportError(message,error);return false}
+}
+
+function drawRecords(items){const q=$('search').value.trim().toLowerCase();$('records').replaceChildren();const found=items.filter(r=>r.material.toLowerCase().includes(q));if(!found.length){const p=document.createElement('p');p.className='hint';p.textContent=q?'該当する記録がありません':'まだ記録がありません';$('records').append(p)}for(const r of found){const section=document.createElement('section');section.className='record';const head=document.createElement('div');head.className='head';const title=document.createElement('strong');title.textContent=r.material;const del=document.createElement('button');del.className='secondary';del.textContent='削除';del.onclick=async()=>{if(confirm('この記録と写真を削除しますか？')){try{await writeRecords(store=>store.delete(r.id));await render()}catch(error){reportError('記録を削除できませんでした。もう一度お試しください。',error)}}};const view=document.createElement('button');view.className='secondary';view.textContent='スクショ';view.onclick=()=>showSnapshot(r);const edit=document.createElement('button');edit.className='secondary';edit.textContent='編集';edit.onclick=()=>{editingId=r.id;for(const key of ['material','power','speed','passes','density','mode'])$(key).value=r[key];selected=[...r.photos];drawSelected();$('editbar').classList.remove('hidden');$('save').textContent='変更を保存する';switchTab('entry');window.scrollTo(0,0)};const actions=document.createElement('div');actions.style.display='flex';actions.style.gap='4px';actions.append(view,edit,del);head.append(title,actions);const meta=document.createElement('div');meta.className='meta';meta.textContent=`電源 ${r.power} ｜ 速度 ${r.speed} ｜ 加工 ${r.passes}回 ｜ 密度 ${r.density} ｜ ${r.mode}`;const date=document.createElement('small');date.textContent=r.date;const photos=document.createElement('div');photos.className='photos';for(const blob of r.photos||[])photos.append(makePhoto(blob));section.append(head,meta,date,photos);$('records').append(section)}}
+function blobToData(blob){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(blob)})}
+function dataToBlob(data){const parts=data.split(',');const mime=(parts[0].match(/data:(.*?);base64/)||[])[1]||'image/jpeg';const bytes=atob(parts[1]);const arr=new Uint8Array(bytes.length);for(let i=0;i<bytes.length;i++)arr[i]=bytes.charCodeAt(i);return new Blob([arr],{type:mime})}
+$('export').onclick=async()=>{try{const rows=[];for(const r of allRecords)rows.push({...r,photos:await Promise.all((r.photos||[]).map(blobToData))});const blob=new Blob([JSON.stringify({app:'Laser Log',version:1,records:rows})],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='laser-log-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000)}catch(e){alert('バックアップ作成に失敗しました')}};
+$('import').onclick=()=>$('backup-file').click();$('backup-file').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{const data=JSON.parse(await file.text());if(data.app!=='Laser Log'||!Array.isArray(data.records)||data.records.length>10000)throw Error('形式が正しくありません');if(!confirm(`${data.records.length}件を復元します。現在の履歴と統合しますか？（同じIDは上書き）`))return;const rows=data.records.map(r=>{if(typeof r.id!=='string'||typeof r.material!=='string'||!Array.isArray(r.photos)||r.photos.some(p=>typeof p!=='string'||!p.startsWith('data:image/')))throw Error('不正なデータ');return {...r,photos:r.photos.map(dataToBlob)}});await writeRecords(store=>{for(const r of rows)store.put(r)});if(await render('復元は完了しましたが、履歴を読み込めませんでした。ページを再読み込みしてください。'))alert('復元しました')}catch(err){alert('バックアップを読み込めません: '+err.message)}finally{$('backup-file').value=''}};
+function showSnapshot(r){const root=$('snap-body');root.replaceChildren();const title=document.createElement('h2');title.textContent=r.material;const date=document.createElement('div');date.className='snap-date';date.textContent=r.date;const grid=document.createElement('div');grid.className='snap-grid';for(const [label,value] of [['電源',r.power],['速度',r.speed],['加工回数',r.passes+'回'],['彫刻密度',r.density],['彫刻モード',r.mode]]){const cell=document.createElement('div');cell.className='snap-cell';const a=document.createElement('small');a.textContent=label;const b=document.createElement('strong');b.textContent=value;cell.append(a,b);grid.append(cell)}const photos=document.createElement('div');photos.className='snap-photos';for(const blob of r.photos){const img=document.createElement('img');const url=URL.createObjectURL(blob);img.src=url;img.onload=()=>URL.revokeObjectURL(url);photos.append(img)}root.append(title,date,grid,photos);document.body.classList.add('snapshot-mode');window.scrollTo(0,0)}
+</script></body></html>
